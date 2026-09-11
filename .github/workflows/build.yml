@@ -10,7 +10,7 @@ jobs:
       
       - name: Build DLL
         run: |
-          g++ -shared -o bypass.dll bypass.cpp -luser32 -lkernel32 -static -m64
+          g++ -shared -o bypass.dll bypass.cpp -luser32 -lkernel32 -static -m64 -fpermissive
         shell: bash
         
       - name: Upload DLL
