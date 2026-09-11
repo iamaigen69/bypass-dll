@@ -1,0 +1,20 @@
+name: Build DLL
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build DLL
+        run: |
+          g++ -shared -o bypass.dll bypass.cpp -luser32 -lkernel32 -static -m64
+        shell: bash
+        
+      - name: Upload DLL
+        uses: actions/upload-artifact@v3
+        with:
+          name: bypass-dll
+          path: bypass.dll
