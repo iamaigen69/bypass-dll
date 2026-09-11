@@ -52,13 +52,13 @@ BOOL WINAPI MySetWindowDisplayAffinity(HWND hwnd, DWORD affinity) {
     return TRUE;
 }
 
-// ── Install a 5-byte JMP hook
+// ── Install a 5-byte JMP hook (x64 compatible)
 void InstallHook(void* target, void* detour, BYTE* original) {
     DWORD old;
     VirtualProtect(target, 5, PAGE_EXECUTE_READWRITE, &old);
     memcpy(original, target, 5);
     *(BYTE*)target = 0xE9; // JMP
-    *(DWORD*)((BYTE*)target + 1) = (DWORD)detour - (DWORD)target - 5;
+    *(DWORD*)((BYTE*)target + 1) = (DWORD)((BYTE*)detour - (BYTE*)target - 5);
     VirtualProtect(target, 5, old, &old);
 }
 
@@ -78,23 +78,23 @@ void InstallAllHooks() {
     if (!u32) return;
 
     // 1. Hook GetForegroundWindow
-    void* pGetFG = GetProcAddress(u32, "GetForegroundWindow");
+    void* pGetFG = (void*)GetProcAddress(u32, "GetForegroundWindow");
     if (pGetFG) InstallHook(pGetFG, (void*)MyGetForegroundWindow, origGetForeground);
 
     // 2. Hook SetWindowPos
-    void* pSWP = GetProcAddress(u32, "SetWindowPos");
+    void* pSWP = (void*)GetProcAddress(u32, "SetWindowPos");
     if (pSWP) InstallHook(pSWP, (void*)MySetWindowPos, origSetWindowPos);
 
     // 3. Hook BringWindowToTop
-    void* pBWT = GetProcAddress(u32, "BringWindowToTop");
+    void* pBWT = (void*)GetProcAddress(u32, "BringWindowToTop");
     if (pBWT) InstallHook(pBWT, (void*)MyBringWindowToTop, origBringToTop);
 
     // 4. Hook SetFocus
-    void* pSF = GetProcAddress(u32, "SetFocus");
+    void* pSF = (void*)GetProcAddress(u32, "SetFocus");
     if (pSF) InstallHook(pSF, (void*)MySetFocus, origSetFocus);
 
     // 5. Hook SetWindowDisplayAffinity — prevents re-applying WDA
-    void* pSWDA = GetProcAddress(u32, "SetWindowDisplayAffinity");
+    void* pSWDA = (void*)GetProcAddress(u32, "SetWindowDisplayAffinity");
     if (pSWDA) InstallHook(pSWDA, (void*)MySetWindowDisplayAffinity, origSetWDA);
 
     // 6. Strip WDA from all existing windows immediately
