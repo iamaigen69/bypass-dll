@@ -22,14 +22,22 @@ void InstallAllHooks() {
     HMODULE u32 = GetModuleHandleA("user32.dll");
     if (!u32) return;
 
-    // Only hook SetWindowDisplayAffinity
-    // Do NOT strip existing WDA — let app go fullscreen first
     void* pSWDA = (void*)GetProcAddress(u32, "SetWindowDisplayAffinity");
     if (pSWDA) InstallHook(pSWDA, (void*)MySetWindowDisplayAffinity, origSetWDA);
 }
 
+// Check if current process is a target we should hook
+bool IsTargetProcess() {
+    char procPath[MAX_PATH] = {0};
+    GetModuleFileNameA(NULL, procPath, MAX_PATH);
+    CharLowerA(procPath);
+    return strstr(procPath, "javaw") != NULL ||
+           strstr(procPath, "browserlock") != NULL;
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
     if (reason == DLL_PROCESS_ATTACH) {
+        if (!IsTargetProcess()) return TRUE; // Exit immediately for svchost etc.
         DisableThreadLibraryCalls(hModule);
         CreateThread(NULL, 0, [](LPVOID) -> DWORD {
             Sleep(300);
